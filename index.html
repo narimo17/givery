@@ -3,109 +3,513 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>愛媛CATV 文字起こし→構造化要約（デモ）</title>
+  <title>通話文字起こし → 構造化要約</title>
+
+  <!-- Noto Sans JP -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+
   <style>
-    body{font-family:system-ui,Meiryo,sans-serif;margin:24px;max-width:1100px}
-    textarea{width:100%;height:260px}
-    button{padding:10px 14px;margin:10px 0}
-    table{border-collapse:collapse;width:100%}
-    th,td{border:1px solid #ddd;padding:8px;vertical-align:top}
-    th{background:#f6f6f6;width:280px}
-    pre{background:#0b1020;color:#e7e7e7;padding:12px;overflow:auto}
-    .small{color:#666;font-size:12px}
-    .warn{color:#b00}
+    :root{
+      /* Colors (DECA Cloud) */
+      --primary: rgba(29, 32, 136, 1);
+      --primary-foreground: rgba(255, 255, 255, 1);
+      --secondary: rgba(31, 132, 244, 1);
+      --secondary-foreground: rgba(255, 255, 255, 1);
+      --accent: rgba(248, 118, 64, 1);
+      --accent-foreground: rgba(255, 255, 255, 1);
+      --destructive: rgba(249, 53, 73, 1);
+      --destructive-foreground: rgba(255, 255, 255, 1);
+
+      --background: rgba(255, 255, 255, 1);
+      --foreground: rgba(51, 51, 51, 1);
+      --card: rgba(255, 255, 255, 1);
+      --card-foreground: rgba(51, 51, 51, 1);
+      --muted: rgba(249, 249, 250, 1);
+      --muted-foreground: rgba(184, 184, 184, 1);
+      --border: rgba(207, 207, 215, 1);
+      --input-background: rgba(255, 255, 255, 1);
+
+      /* Typography scale */
+      --text-4xl: 40px;
+      --text-2xl: 32px;
+      --text-lg: 20px;
+      --text-md: 18px;
+      --text-base: 16px;
+      --text-sm: 14px;
+      --text-xs: 12px;
+
+      --font-weight-bold: 700;
+      --font-weight-medium: 500;
+      --font-weight-normal: 400;
+
+      /* Radius */
+      --radius-button: 4px;
+      --radius-card: 8px;
+
+      /* Elevation */
+      --elevation-sm: 0 1px 2px rgba(0,0,0,.06), 0 6px 16px rgba(0,0,0,.06);
+
+      /* Layout */
+      --page-bg: rgba(249, 249, 250, 1);
+    }
+
+    *{ box-sizing: border-box; }
+    body{
+      margin: 0;
+      font-family: 'Noto Sans JP', sans-serif;
+      color: var(--foreground);
+      background: var(--page-bg);
+    }
+
+    /* Header */
+    header{
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 56px;
+      background: var(--background);
+      border-bottom: 1px solid var(--border);
+      z-index: 40;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+    }
+    .header-inner{
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .title{
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      min-width: 0;
+    }
+    .title h1{
+      margin: 0;
+      font-size: var(--text-md);
+      font-weight: var(--font-weight-bold);
+      color: var(--foreground);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .badge{
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: var(--radius-button);
+      background: #e8ecff;
+      border: 1px solid var(--primary);
+      color: var(--primary);
+      font-size: 12px;
+      font-weight: var(--font-weight-medium);
+      white-space: nowrap;
+    }
+    .badge-dot{
+      width: 8px; height: 8px;
+      border-radius: 999px;
+      background: var(--primary);
+    }
+
+    /* Main */
+    main{
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px 16px 40px;
+      padding-top: calc(56px + 20px);
+    }
+    @media (min-width: 768px){
+      main{ padding-left: 32px; padding-right: 32px; }
+      header{ padding-left: 32px; padding-right: 32px; }
+    }
+
+    .stack{ display: flex; flex-direction: column; gap: 32px; }
+
+    .card{
+      background: var(--card);
+      color: var(--card-foreground);
+      border-radius: var(--radius-card);
+      box-shadow: var(--elevation-sm);
+      border: 1px solid var(--border);
+    }
+    .card-header{
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .card-header h2{
+      margin: 0;
+      font-size: var(--text-md);
+      font-weight: var(--font-weight-bold);
+      color: var(--foreground);
+    }
+    .card-body{ padding: 20px 24px; }
+    .hint{
+      margin: 0 0 16px 0;
+      font-size: var(--text-xs);
+      color: #666666;
+      line-height: 1.6;
+    }
+
+    /* Form */
+    .form{
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    label{
+      font-size: var(--text-sm);
+      font-weight: var(--font-weight-medium);
+      color: var(--foreground);
+    }
+    textarea{
+      width: 100%;
+      min-height: 220px;
+      resize: vertical;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-button);
+      padding: 8px 12px;
+      background: var(--input-background);
+      font-size: var(--text-sm);
+      line-height: 1.6;
+      outline: none;
+      transition: box-shadow .15s ease, border-color .15s ease;
+    }
+    textarea:focus{
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(29,32,136,.15);
+    }
+
+    .actions{
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .btn-primary{
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--primary);
+      color: var(--primary-foreground);
+      border: 1px solid transparent;
+      padding: 10px 20px;
+      border-radius: var(--radius-button);
+      cursor: pointer;
+      font-size: var(--text-sm);
+      font-weight: var(--font-weight-medium);
+      transition: background-color .15s ease, opacity .15s ease;
+    }
+    .btn-primary:hover{ background: rgba(21, 26, 94, 1); }
+    .btn-primary:disabled{ opacity: .6; cursor: not-allowed; }
+
+    .btn-secondary{
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--background);
+      color: var(--foreground);
+      border: 1px solid var(--border);
+      padding: 10px 20px;
+      border-radius: var(--radius-button);
+      cursor: pointer;
+      font-size: var(--text-sm);
+      font-weight: var(--font-weight-medium);
+      transition: background-color .15s ease;
+    }
+    .btn-secondary:hover{ background: var(--muted); }
+
+    .status{
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: var(--text-sm);
+      color: #666666;
+      min-height: 24px;
+    }
+    .spinner{
+      width: 16px; height: 16px;
+      border: 2px solid var(--border);
+      border-top-color: var(--primary);
+      border-radius: 999px;
+      animation: spin 0.9s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Table */
+    table{
+      width: 100%;
+      border-collapse: collapse;
+      overflow: hidden;
+      border-radius: var(--radius-card);
+    }
+    thead th{
+      background: var(--muted);
+      color: #666666;
+      font-size: var(--text-xs);
+      font-weight: var(--font-weight-medium);
+      text-align: left;
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    tbody td{
+      padding: 15px 20px;
+      font-size: var(--text-sm);
+      color: var(--foreground);
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    tbody tr:hover{ background: var(--muted); transition: background-color .15s ease; }
+    .key{
+      width: 320px;
+      color: #666666;
+      font-weight: var(--font-weight-medium);
+    }
+
+    pre{
+      margin: 0;
+      background: #0b1020;
+      color: #e7e7e7;
+      padding: 12px;
+      border-radius: var(--radius-card);
+      overflow: auto;
+      font-size: 12px;
+      line-height: 1.6;
+      border: 1px solid rgba(255,255,255,.08);
+    }
+
+    .grid{
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+    @media (min-width: 1024px){
+      .grid{ grid-template-columns: 1fr 1fr; }
+    }
   </style>
 </head>
+
 <body>
-<h1>通話文字起こし → 構造化要約（デモ）</h1>
-<p class="small">このデモはサンプル1件の期待結果を表示します（GitHub Pagesのみ／サーバ処理なし）。</p>
+  <header>
+    <div class="header-inner">
+      <div class="title">
+        <h1>通話文字起こし → 構造化要約</h1>
+        <span class="badge" title="デモ">
+          <span class="badge-dot"></span>
+          Demo
+        </span>
+      </div>
+      <div style="font-size:12px;color:#666666;white-space:nowrap;">
+        Ehime CATV
+      </div>
+    </div>
+  </header>
 
-<textarea id="t" placeholder="ここに生の文字起こしを貼り付け"></textarea>
-<br/>
-<button id="run">構造化する</button>
-<div id="msg" class="small"></div>
+  <main>
+    <div class="stack">
+      <section class="card">
+        <div class="card-header">
+          <h2>入力</h2>
+          <button class="btn-secondary" id="fill">サンプルを貼り付け</button>
+        </div>
+        <div class="card-body">
+          <p class="hint">
+            生の文字起こしを貼り付けて「構造化する」を押してください。<br>
+            ※個人情報の貼り付けは避けてください。
+          </p>
 
-<h2>構造化結果</h2>
-<div id="table"></div>
+          <div class="form">
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <label for="t">通話文字起こし</label>
+              <textarea id="t" placeholder="[OP]: ... / [CL]: ... の形式を想定"></textarea>
+            </div>
 
-<h2>JSON</h2>
-<pre id="out"></pre>
+            <div class="actions">
+              <button class="btn-primary" id="run">
+                <span>構造化する</span>
+              </button>
+              <div class="status" id="status"></div>
+            </div>
+          </div>
+        </div>
+      </section>
 
-<script>
-const KEYS = [
- "通話日時","オペレーター名","顧客属性(推定)","契約状況(推測)","入電目的(大分類)","具体的課題(Trigger)",
- "解決プロセス(Action)","ライフイベント・予兆","解約リスク判定","解約リスク判定_詳細",
- "評価_Soft_点数","評価_Soft_内容","評価_Soft_根拠",
- "評価_Hard基本_点数","評価_Hard基本_内容","評価_Hard基本_根拠",
- "評価_Hard専門_点数","評価_Hard専門_内容","評価_Hard専門_根拠",
- "評価_判断提案_点数","評価_判断提案_内容","評価_判断提案_根拠",
- "会話要約","会話全文(整形済)"
-];
+      <section class="card">
+        <div class="card-header">
+          <h2>出力</h2>
+        </div>
+        <div class="card-body">
+          <div class="grid">
+            <div>
+              <div style="margin-bottom:12px;font-size:14px;font-weight:700;color:#333333;">構造化結果</div>
+              <div id="tableWrap"></div>
+            </div>
+            <div>
+              <div style="margin-bottom:12px;font-size:14px;font-weight:700;color:#333333;">JSON</div>
+              <pre id="out"></pre>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
 
-// あなたが提示した「生成AI実行結果」をそのまま構造化オブジェクトにする
-const EXPECTED = {
-  "通話日時": "2023年10月6日",
-  "オペレーター名": "松本",
-  "顧客属性(推定)": "既加入者",
-  "契約状況(推測)": "既加入者",
-  "入電目的(大分類)": "営業案内",
-  "具体的課題(Trigger)": "新プランの案内と訪問提案",
-  "解決プロセス(Action)": "電話完結",
-  "ライフイベント・予兆": "通信費の見直し",
-  "解約リスク判定": "低",
-  "解約リスク判定_詳細": "顧客は現状維持を希望",
-  "評価_Soft_点数": 4,
-  "評価_Soft_内容": "顧客に対する丁寧な対応と説明",
-  "評価_Soft_根拠": "お世話になります。現在、弊社のピカラとテレビサービスにご購入いただいているお客様に...",
-  "評価_Hard基本_点数": 3,
-  "評価_Hard基本_内容": "基本的なプラン説明はできているが、顧客の質問に対する具体的な回答が不足",
-  "評価_Hard基本_根拠": "普段何ギガご利用ですかね。今は、パンぐらいですかね。",
-  "評価_Hard専門_点数": 3,
-  "評価_Hard専門_内容": "専門的な知識はあるが、顧客のニーズに合わせた提案が不足",
-  "評価_Hard専門_根拠": "料金を買ってくるんですけど、30ギガですとプラスで3520円かかります。",
-  "評価_判断提案_点数": 4,
-  "評価_判断提案_内容": "訪問提案は適切だが、顧客の現状維持の意向を尊重",
-  "評価_判断提案_根拠": "今はまた大丈夫ですかね。",
-  "会話要約": "愛媛CATVの松本が既加入者の佐々木郎様に新しいモバイルスマホプランの案内を行い、訪問提案をしたが、顧客は現状維持を希望した。",
-  "会話全文(整形済)": "OP: はい、もしもし。 CU: お世話になります。私、愛媛CATVの松本と申します。 OP: はい、はい、どうも。 CU: 佐々木郎様のお電話でよろしいでしょうか。 OP: はい。 CU: いつも弊社サービスのご利用ありがとうございます。 CU: 本日も連絡しましたのが、弊社サービスの案内でお電話をさせてあげました。 OP: はい。 CU: 今お電話少々よろしいでしょうか。 OP: 大丈夫です。 CU: ありがとうございます。 お世話になります。現在、弊社のピカラとテレビサービスにご購入いただいているお客様に、 CU: お世話になります。現在、弊社のピカラとテレビサービスにご購入いただいているお客様に、 CU: お世話になります。現在、弊社のピカラとテレビサービスにご購入いただいているお客様に、 もたととにご利用いただけるモバイルスマホプランについてご案内をさせてあげております。 CU: はい。 佐々木郎様でしたら、特別割引が適用できるようになっており、 CU: 佐々木郎様でしたら、特別割引が適用できるようになっており、 月額1300円程度からご利用いただけるようになっております。 CU: さらに、9月末までの限定キャンペーンもやっており、 通常は費用がかかる数量が無料になったり、 CU: 消し変更する場合は、特別割引価格の端末の準備をしております。 CU: 弊社モバイルスマホのご利用者様からは、 実際に弊社のモバイルを使ってみて、 CU: 表の通信会社と比べても、回線の質はほとんど変わらないけど、 CU: 料金は安いので、以前の支払いから、 年間数万円出約でしたというお声も多くいただいています。 CU: いろんなものが値上げの世の中になってしまっておりますので、 自宅の通信費を見直したいというお声も大変多くいただいており、 CU: 弊社では現在、ご訪問にて新プランの出演や通信費削減のご提案をしておりまして、 CU: 宇宙コロさまにもその時間を頂戴できればと思い、 ご連絡させてあげておりますので、 OP: ご連絡させてあげておりますので、 CU: 訪問のご希望をお伺いしてよろしいでしょうか。 OP: その何ボクぐらいになるんですか? 結局、そんな何ギガ使えるとかあるじゃないですか。 CU: はい。普段何ギガご利用ですかね。 今は、パンぐらいですかね。 OP: 今は、パンぐらいですかね。 CU: さっきお伝えした1300円程度から、それに3ギガ分の495円が追加になりますね。 OP: それで、何ギガまであるんですか? CU: 料金を買ってくるんですけど、30ギガですとプラスで3520円かかります。 CU: 料金を買ってくるんですけど、30ギガですとプラスで3520円かかります。 はい。なるほどですね。 OP: はい。なるほどですね。 CU: そこにかけ放題を付けすると、1650円またプラスになってきますね。 OP: そこにかけ放題を付けすると、1650円またプラスになってきますね。 はい。なるほど。そうですね。 OP: はい。なるほど。そうですね。 OP: 今はまた大丈夫ですかね。 はい。 CU: もしまた何か気になれば、お店の方にもお伝えいただければと思います。 OP: はい。わかりました。どうも。 CU: はい。わかりました。どうも。 ありがとうございます。いってらっしゃいます。 OP: ありがとうございます。いってらっしゃいます。"
-};
+  <script>
+    const KEYS = [
+      "通話日時","オペレーター名","顧客属性(推定)","契約状況(推測)","入電目的(大分類)","具体的課題(Trigger)",
+      "解決プロセス(Action)","ライフイベント・予兆","解約リスク判定","解約リスク判定_詳細",
+      "評価_Soft_点数","評価_Soft_内容","評価_Soft_根拠",
+      "評価_Hard基本_点数","評価_Hard基本_内容","評価_Hard基本_根拠",
+      "評価_Hard専門_点数","評価_Hard専門_内容","評価_Hard専門_根拠",
+      "評価_判断提案_点数","評価_判断提案_内容","評価_判断提案_根拠",
+      "会話要約","会話全文(整形済)"
+    ];
 
-function esc(s){
-  return String(s ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-}
+    // 「生成AI実行結果」を期待値として固定（デモ用）
+    const EXPECTED = {
+      "通話日時": "2023年10月6日",
+      "オペレーター名": "松本",
+      "顧客属性(推定)": "既加入者",
+      "契約状況(推測)": "既加入者",
+      "入電目的(大分類)": "営業案内",
+      "具体的課題(Trigger)": "新プランの案内と訪問提案",
+      "解決プロセス(Action)": "電話完結",
+      "ライフイベント・予兆": "通信費の見直し",
+      "解約リスク判定": "低",
+      "解約リスク判定_詳細": "顧客は現状維持を希望",
+      "評価_Soft_点数": 4,
+      "評価_Soft_内容": "顧客に対する丁寧な対応と説明",
+      "評価_Soft_根拠": "お世話になります。現在、弊社のピカラとテレビサービスにご購入いただいているお客様に...",
+      "評価_Hard基本_点数": 3,
+      "評価_Hard基本_内容": "基本的なプラン説明はできているが、顧客の質問に対する具体的な回答が不足",
+      "評価_Hard基本_根拠": "普段何ギガご利用ですかね。今は、パンぐらいですかね。",
+      "評価_Hard専門_点数": 3,
+      "評価_Hard専門_内容": "専門的な知識はあるが、顧客のニーズに合わせた提案が不足",
+      "評価_Hard専門_根拠": "料金を買ってくるんですけど、30ギガですとプラスで3520円かかります。",
+      "評価_判断提案_点数": 4,
+      "評価_判断提案_内容": "訪問提案は適切だが、顧客の現状維持の意向を尊重",
+      "評価_判断提案_根拠": "今はまた大丈夫ですかね。",
+      "会話要約": "愛媛CATVの松本が既加入者の佐々木郎様に新しいモバイルスマホプランの案内を行い、訪問提案をしたが、顧客は現状維持を希望した。",
+      "会話全文(整形済)": "OP: はい、もしもし。 CU: お世話になります。私、愛媛CATVの松本と申します。 OP: はい、はい、どうも。 CU: 佐々木郎様のお電話でよろしいでしょうか。 OP: はい。 CU: いつも弊社サービスのご利用ありがとうございます。 CU: 本日も連絡しましたのが、弊社サービスの案内でお電話をさせてあげました。 OP: はい。 CU: 今お電話少々よろしいでしょうか。 OP: 大丈夫です。 CU: ありがとうございます。 お世話になります。現在、弊社のピカラとテレビサービスにご購入いただいているお客様に、 CU: お世話になります。現在、弊社のピカラとテレビサービスにご購入いただいているお客様に、 CU: お世話になります。現在、弊社のピカラとテレビサービスにご購入いただいているお客様に、 もたととにご利用いただけるモバイルスマホプランについてご案内をさせてあげております。 CU: はい。 佐々木郎様でしたら、特別割引が適用できるようになっており、 CU: 佐々木郎様でしたら、特別割引が適用できるようになっており、 月額1300円程度からご利用いただけるようになっております。 CU: さらに、9月末までの限定キャンペーンもやっており、 通常は費用がかかる数量が無料になったり、 CU: 消し変更する場合は、特別割引価格の端末の準備をしております。 CU: 弊社モバイルスマホのご利用者様からは、 実際に弊社のモバイルを使ってみて、 CU: 表の通信会社と比べても、回線の質はほとんど変わらないけど、 CU: 料金は安いので、以前の支払いから、 年間数万円出約でしたというお声も多くいただいています。 CU: いろんなものが値上げの世の中になってしまっておりますので、 自宅の通信費を見直したいというお声も大変多くいただいており、 CU: 弊社では現在、ご訪問にて新プランの出演や通信費削減のご提案をしておりまして、 CU: 宇宙コロさまにもその時間を頂戴できればと思い、 ご連絡させてあげておりますので、 OP: ご連絡させてあげておりますので、 CU: 訪問のご希望をお伺いしてよろしいでしょうか。 OP: その何ボクぐらいになるんですか? 結局、そんな何ギガ使えるとかあるじゃないですか。 CU: はい。普段何ギガご利用ですかね。 今は、パンぐらいですかね。 OP: 今は、パンぐらいですかね。 CU: さっきお伝えした1300円程度から、それに3ギガ分の495円が追加になりますね。 OP: それで、何ギガまであるんですか? CU: 料金を買ってくるんですけど、30ギガですとプラスで3520円かかります。 CU: 料金を買ってくるんですけど、30ギガですとプラスで3520円かかります。 はい。なるほどですね。 OP: はい。なるほどですね。 CU: そこにかけ放題を付けすると、1650円またプラスになってきますね。 OP: そこにかけ放題を付けすると、1650円またプラスになってきますね。 はい。なるほど。そうですね。 OP: はい。なるほど。そうですね。 OP: 今はまた大丈夫ですかね。 はい。 CU: もしまた何か気になれば、お店の方にもお伝えいただければと思います。 OP: はい。わかりました。どうも。 CU: はい。わかりました。どうも。 ありがとうございます。いってらっしゃいます。 OP: ありがとうございます。いってらっしゃいます。"
+    };
 
-function renderTable(obj){
-  const rows = KEYS.map(k => {
-    let v = obj[k];
-    if (v && typeof v === "object") v = JSON.stringify(v);
-    return `<tr><th>${esc(k)}</th><td>${esc(v)}</td></tr>`;
-  }).join("");
-  return `<table>${rows}</table>`;
-}
+    // サンプル入力（あなたが貼ってくれた“生の文字起こし”の体裁）
+    const SAMPLE_INPUT = `"[OP]: お世話になります。私、愛媛市ATVの松本と申します。
+[OP]: お世話になります。
+[CL]: お世話になっております。 下野様のお電話でよろしいでしょうか。
+[OP]: はい。
+[CL]: 実は弊社サービスのご利用ありがとうございます。
+[CL]: はい。 本日ご連絡しましたのが、弊社サービスのご案内でお電話をさせ上げました。
+[OP]: はい。 今お電話少々よろしいでしょうか。
+[CL]: ありがとうございます。 お世話になります。現在、弊社のピカラとテレビサービスにご加入いただいているお客様に、
+[CL]: お得にご利用いただけるモバイルスマホプランについてご案内をさせ上げております。
+[CL]: はい。 下野様でしたら、特別割引が適用できるようになっており、 月額1,300円程度からご利用いただけるようになっております。
+[CL]: さらに、9月末までの限定キャンペーンもやっており、 通常は費用がかかる手数料が無料になったり、
+[CL]: はい。 下野様にもその時間を招待できればと思い、ご連絡差し上げておりますので、
+[CL]: 訪問のご希望日をお伺いしてもよろしいでしょうか。
+[OP]: えっと、回線はどこの回線使っているんですか?
+[CL]: えっと、ドコモになりますね。
+[OP]: 大体、利用料金というのは20ギガとかでいくらくらいになるんですか。
+[CL]: 20ギガですと、クラスで1595円かかりますね。
+[OP]: えっと、回線は通話の掛け放題と、20ギガくらいのプランでいくらくらいになるんですか、基本料金込みで。
+[CL]: 基本料金は1390円で、20ギガは1595円で、掛け放題になると1650円なので、4000円、5000円いかないくらいですかね。
+[OP]: わかりました。じゃあ今、ほとんど変わらないので、もう大丈夫です。
+[CL]: そう、はい。確かまりました。また何かいい考えができましたらご連絡させていただきます。
+[CL]: ありがとうございます。失礼します。"
+`;
 
-// “出来てる感”用：入力がこのケースっぽいか軽くチェック（外れても期待結果は出せる）
-function looksLikeThisCase(text){
-  const t = text || "";
-  return /松本/.test(t) && /(ピカラ|テレビサービス)/.test(t) && /(モバイル|スマホ)/.test(t);
-}
+    const $ = (id) => document.getElementById(id);
 
-document.getElementById("run").addEventListener("click", () => {
-  const text = document.getElementById("t").value;
-  const msg = document.getElementById("msg");
+    function escapeHtml(s){
+      return String(s ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
 
-  if (!text.trim()) {
-    msg.innerHTML = `<span class="warn">文字起こしを貼ってください</span>`;
-    return;
-  }
-  if (!looksLikeThisCase(text)) {
-    msg.innerHTML = `<span class="warn">このデモはサンプル1件の期待結果固定です（入力内容が一致しない可能性があります）</span>`;
-  } else {
-    msg.textContent = "サンプルケースとして判定しました。";
-  }
+    function renderTable(obj){
+      const rows = KEYS.map(k => {
+        let v = obj[k];
+        if (v && typeof v === "object") v = JSON.stringify(v);
+        return `
+          <tr>
+            <td class="key">${escapeHtml(k)}</td>
+            <td>${escapeHtml(v)}</td>
+          </tr>
+        `;
+      }).join("");
 
-  document.getElementById("table").innerHTML = renderTable(EXPECTED);
-  document.getElementById("out").textContent = JSON.stringify(EXPECTED, null, 2);
-});
-</script>
+      return `
+        <table>
+          <thead>
+            <tr>
+              <th style="width:320px;">項目</th>
+              <th>値</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+    }
+
+    function setLoading(isLoading){
+      const run = $("run");
+      const status = $("status");
+      run.disabled = isLoading;
+
+      if (isLoading){
+        status.innerHTML = `<span class="spinner" aria-hidden="true"></span><span>処理中…</span>`;
+      } else {
+        status.textContent = "";
+      }
+    }
+
+    async function fakeProcessDelay(ms){
+      return new Promise(r => setTimeout(r, ms));
+    }
+
+    $("fill").addEventListener("click", () => {
+      $("t").value = SAMPLE_INPUT;
+      $("t").focus();
+    });
+
+    $("run").addEventListener("click", async () => {
+      const text = $("t").value.trim();
+      if (!text){
+        $("status").innerHTML = `<span style="color: var(--destructive); font-weight: 500;">文字起こしを貼り付けてください。</span>`;
+        return;
+      }
+
+      setLoading(true);
+
+      // “数秒ロードしている感”を演出（1.6〜2.4秒でランダム）
+      const ms = 1600 + Math.floor(Math.random() * 900);
+      await fakeProcessDelay(ms);
+
+      // デモ：期待結果を表示
+      $("tableWrap").innerHTML = renderTable(EXPECTED);
+      $("out").textContent = JSON.stringify(EXPECTED, null, 2);
+
+      setLoading(false);
+      $("status").innerHTML = `<span style="color:#666666;">完了</span>`;
+      // 少ししたら「完了」を消す
+      setTimeout(() => { $("status").textContent = ""; }, 1200);
+    });
+
+    // 初期表示
+    $("tableWrap").innerHTML = `<div style="padding:12px;border:1px solid var(--border);border-radius:8px;background:var(--muted);color:#666666;font-size:14px;">
+      まだ出力はありません。文字起こしを貼り付けて「構造化する」を実行してください。
+    </div>`;
+    $("out").textContent = "";
+  </script>
 </body>
 </html>
